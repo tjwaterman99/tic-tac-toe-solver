@@ -2,15 +2,15 @@
 
 > https://tictactoe.tjwaterman.com/
 
-A reinforcement-learning based tic-tac-toe solver.
+A reinforcement-learning based tic-tac-toe solver using only the Python standard library.
 
 ## Prequisites
 
-Install python3.11 (or any modern version of Python will probably work), as well as the AWS SAM cli.
+Install python3.13 (or any modern version of Python will probably work), as well as the AWS SAM cli.
 
 ```
 brew install aws-sam-cli
-python3.11 -m venv .venv
+python3.13 -m venv .venv
 .venv/bin/activate
 pip install pytest
 ```
