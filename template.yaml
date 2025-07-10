@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: tic-tac-toe-solver
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 10
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: tic-tac-toe-solver.tjwaterman.com
+    Description: Custom domain name for the API
+  
+  CertificateArn:
+    Type: String
+    Default: arn:aws:acm:us-east-1:280924795858:certificate/564302ac-06a7-42bf-9f0e-430b26549203
+    Description: ARN of the SSL certificate in us-east-1
+
+Resources:
+  TicTacToeSolverFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: .
+      Handler: function.app.lambda_handler
+      Runtime: python3.13
+      Architectures:
+      - x86_64
+      Events:
+        Predict:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /predict
+            Method: post
+            RestApiId: !Ref ServerlessRestApi
+  ServerlessRestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - X-Amz-Date
+          - Authorization
+          - X-Api-Key
+          - X-Amz-Security-Token
+        AllowOrigin:
+          - https://tjwaterman.com
+          - https://www.tjwaterman.com
+          - http://127.0.0.1:*
+        AllowCredentials: false
+  ApiGatewayDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: !Ref DomainName
+      CertificateArn: !Ref CertificateArn
+      EndpointConfiguration:
+        Types:
+          - EDGE
+  ApiGatewayMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      DomainName: !Ref ApiGatewayDomain
+      RestApiId: !Ref ServerlessRestApi
+      Stage: Prod
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: true
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  TicTacToeApi:
+    Description: API Gateway endpoint URL for Prod stage for Tic Tac Toe Solver
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/predict/"
+  TicTacToeSolverFunction:
+    Description: Tic Tac Toe Solver Lambda Function ARN
+    Value: !GetAtt TicTacToeSolverFunction.Arn
+  TicTacToeSolverFunctionIamRole:
+    Description: Implicit IAM Role created for Tic Tac Toe Solver function
+    Value: !GetAtt TicTacToeSolverFunctionRole.Arn
+  CustomDomainUrl:
+    Description: "Custom domain URL"
+    Value: !Sub "https://${DomainName}/Prod/"
+  CloudFrontDomainName:
+    Description: "CloudFront domain name for CNAME record"
+    Value: !GetAtt ApiGatewayDomain.DistributionDomainName
