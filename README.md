@@ -40,7 +40,7 @@ sam local start-api
 http post http://127.0.0.1:3000/predict board:="[1,0,-1,1,-1,0,0,0,0]" player:="1"
 ```
 
-## eploy
+## Deploy
 
 Ensure your AWS credentials are present.
 
@@ -53,7 +53,7 @@ export AWS_SECRET_ACCESS_KEY=...
 sam deploy
 ```
 
-## predict
+## Predict
 
 ```
 pipx install httpie
